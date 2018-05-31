@@ -1,9 +1,5 @@
 package io.tpd.reactivebook.reactor.temperature;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import reactor.core.publisher.Flux;
-
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.Month;
@@ -13,7 +9,12 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static java.time.temporal.ChronoUnit.SECONDS;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import reactor.core.publisher.Flux;
+
+import static java.time.temporal.ChronoUnit.*;
 
 public class TemperatureSensor {
 
@@ -36,14 +37,28 @@ public class TemperatureSensor {
     return Flux.fromStream(
       temperatureStream(100)
     ).doOnComplete(
-      () -> log.info("Completed! Total {} passed the filter", counter.get())
+      () -> log.info(
+        "Completed! Total {} passed the filter",
+        counter.getAndSet(0)
+      )
     ).filter(
       t -> t.getTemperature() > 2450
     ).doOnNext(
       ignore -> counter.set(counter.get() + 1)
     ).doOnNext(
-      item -> log.info("Calling onNext() with {}", item)
-    ).replay().autoConnect();
+      item -> log.trace("Calling onNext() with {}", item)
+    );
+  }
+
+  public Flux<TemperatureRead> averageTemperatureFlux() {
+    return temperatureFlux()
+      .window(10).flatMap(temperatureReadFlux ->
+        temperatureReadFlux.doOnNext(
+          item -> log.trace("Calling onNext() for averages with {}", item)
+        ).reduce(
+          TemperatureSensor::averageReducer
+        )
+      );
   }
 
   private static Stream<TemperatureRead> temperatureStream(final int items) {
@@ -59,5 +74,13 @@ public class TemperatureSensor {
     return BASE_TEMP +
       ThreadLocalRandom.current().nextInt(MAX_TEMP_VARIATION) *
         (ThreadLocalRandom.current().nextBoolean() ? -1 : 1);
+  }
+
+  private static TemperatureRead averageReducer(final TemperatureRead t1,
+                                                final TemperatureRead t2) {
+    return new TemperatureRead(
+      (t1.getTemperature() + t2.getTemperature()) / 2,
+      t1.getTimestamp()
+    );
   }
 }

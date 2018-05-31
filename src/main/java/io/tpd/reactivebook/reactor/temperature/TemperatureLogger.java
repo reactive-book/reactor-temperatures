@@ -1,8 +1,9 @@
 package io.tpd.reactivebook.reactor.temperature;
 
-import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public class TemperatureLogger implements TemperatureSubscriber {
@@ -14,6 +15,6 @@ public class TemperatureLogger implements TemperatureSubscriber {
 
   @Override
   public void accept(final TemperatureRead temperatureRead) {
-    log.info("[{}] received {}", name, temperatureRead);
+    log.debug("[{}] received {}", name, temperatureRead);
   }
 }
