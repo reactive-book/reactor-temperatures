@@ -1,11 +1,11 @@
-package io.tpd.reactivebook.reactor.temperature;
+package io.tpd.reactivebook.reactor.temperature.domain;
 
 import java.time.Instant;
 
 import lombok.Value;
 
 @Value
-public class TemperatureRead {
+public class Measurement {
 
   int temperature;
   Instant timestamp;
